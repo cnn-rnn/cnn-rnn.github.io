@@ -4,14 +4,14 @@
 <head>
 
 <style>
-.top-left-links a {
-    display: inline-block;  /* or display: block; */
-    margin-right: 15px;
-    text-decoration: none;
-    color: blue;
-    margin-bottom: 20px;  /* Now works! */
-    size: 30px;  /* This isn't valid CSS - use font-size or width/height */
+
+.top-left-links {
+    display: block;
+    margin-bottom: 20px;  /* Now works because it's block level */
+    /* Remove position: absolute if you don't need it */
 }
+
+
 </style>    
     
     <title>Distributed Search Engine</title>
