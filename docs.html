@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+
+</head>
+<body>
+
+
+
+
+
+       <div>
+          <h1 style={{color:'black'}}>Docs</h1>
+
+
+        <div>
+            <h1>
+                Financial Component
+            </h1>
+        </div>
+
+        <div>
+            The financial component is described in more detail in our <a href="https://searchdao.net/assets/dee5.pdf">whitepaper</a>. Here we describe specs of nodes. 
+
+            The nodes are organized into a B-tree. This B-tree has growth rules to scale operations
+        </div>
+
+        <div>
+            <h2>Node types</h2>
+            Node spec may differ by the position of node in the B-tree. At the root the sepcs are minimal.
+        </div>
+        <div>
+            <h2>B-tree structure</h2>
+            In order to scale transactions, the compute nodes are organized in a B-tree. The vertices closer to root may have higher gas price. Each vertex in the B-tree is served by a pool of nodes. The vertices are addressed by the tree address <br/>
+            <code>
+                [a]=[a_0:a_1:...:a_l]
+            </code>
+            <br/>
+            where a_i is a 256 hex string.
+            
+            They maintain a blockchain of transactions issued by the clients of this vertex. <br/>
+            For clarity, we will use the phrase "the vertex B_a issues a TX_X". This phrase means the following:
+            <ol>
+                <li>nodes N_a_i serving the vertex B_a reached a consensus on this TX_X and recorded it on its BC. This record includes signatures of nodes N_a_i</li>
+                <li>the nodes of the vertex communicate TX_X to nodes N_p_j, that maintain the parent vertex B_p of the vertex B_a</li>
+                <li>the communication happens according to the protocol specified by parent vertex B_p for the specific child vertex B_a</li>
+            </ol>
+        </div>
+        <div>
+            <h2>Vertex manifest</h2>
+            The vertex manifest specifies
+            <ol>
+                <li>
+                    Node spec
+                </li>
+                <li>The minimal number of nodes to serve this vertex. This is security guarantee , the decentralization degree of this particulr vertex</li>
+                <li>The protocol by which nodes can join the vertex. The vertex can , for example, be "private", by allowing only specified "trusted" nodes.</li>
+                <li>
+                    Load calculation algorithm
+                </li>
+                <li>
+                    Maximal load
+                </li>
+                <li>
+                    Branching rules
+                </li>
+                <li>
+                    Consensus algorithm. The default consensus is Avalanche, with the modification descibed in <a href="https://searchdao.net/assets/dee5.pdf">whitepaper</a>
+                </li>
+                <li>
+                    Gas calculation algortihm and price
+                </li>
+            </ol>
+        </div>
+        <div>
+            <h2>Growth rules</h2>
+            The default growth rule, followed e.g. by the root vertex, is <br/>
+            <code>
+                [Average # of TXs per second] > N0
+            </code>
+            <br/>
+            <code>
+                [Average Node Load] > L0
+            </code>
+            <br/>
+
+            Each vertex maintains its own blockchain from which [Average # of transactions] is calculated. The node load comes from Data Availability Check transactions described below. These transactions are recorded on chain and therefore this load can be unabmiguosly calculated.
+
+            If this condition is met, the Vertex opens possibility for nodes to create a subvertex. This contract includes <br/>
+            <ol>
+                <li>Schedule of financial reports</li>
+                <li>Audit rules</li>
+            </ol>
+            In the simplest case, [Financial report] is the following structure <br/>
+            <code>
+                [Merkle root of financial transactions in a given time period] <br/>
+                [Merkle root of state of entities within the vertex] <br/>
+                [Transfer matrix of funds between vertices of the same level] <br/>
+            </code>
+            Time period in the above is set by the parent vertex.
+        </div>
+        <div>
+            <h2>Structure of financial transactions</h2>
+
+            The financial transactions are tied with  the B-tree structure. The transfer transaction between two clients with addresses A=[a_0:...:a_k:a_k+1:...a_n] and B=[a_0:...:a_k:b_k+1:...:b_m], a_k+1 != b_k+1 can be settled by the vertex B_[a_:...;a_k] and do not have to be propagated further. The transfer of funds happens in the following stages:
+            <ol>
+                <li>the transaction propagates up to the nearest vertex to which both of the accounts are common children. This "propagation" consists in transferiing funds to the vertex account, as registered with its parent. This chain of transfers may look like [a_0:...a_n] -> [a_0:....:a_n-1]-> ... -> [a_0:...a_k]</li>
+
+                <li>once the funds are available for B_[a_0:...a_k], a downward chain of transactions is initiated [a_0:....a_k] -> [a_0:...a_k:b_k+1] -> ... -> [a_0:...:a_k:b_k+1:...:b_n] </li>
+            </ol>
+            At each step, the parent bank makes the transaction available on its blockchain. This serves as a trigger for the childe vertex that it can initiate the transaction. To avoid frequent update at the low height of the tree ( near to the root), the transactions are batched as follows. The transfers between vertices B_a are settled in gross , i.e., the sums of money that were requested to be transferred by clients are summed.
+
+            <br/>
+            It is up to the vertex to specify the schedule of the transactions. For example, there may be "fast vertex", such that transactions within that vertex are settled very fast. This is necessary to incorporate millisecond trading.
+            <br/>
+
+            The financial transaction structure is based on fractional reserve model. Each vertex corresponds to a bank. Its subvertices are its clients. Vertex can perform transfer transactions between its clients accounts locally. To perform transfer to accounts of clients of other vertex of the same or higher level, the vertex must submit a transaction to its parent vertex. <br/>
+            <code>
+                [Transfer(amount, acount_id)]
+            </code>
+            <br/>
+            This transfer happens from the account of the vertex itself. If a client wishes to transfer funds to [account_id],  then it 1. transferes funds to vertex account 2. vertex reports the transaction to its parent vertex, which then trsfers the funds to the [account_id] , if it is one of its clients, or issues a transaction to its parent , if [account_id] belongs to more distant part of the B-tree. <br/>
+
+        <div>
+            <h2>Clinets</h2>
+            Client joins the network by creating account with a vertex B_a, a= [a_0:...:a_n]. Thus, client has the address client_id = [a_0:...:a_n:c_id]. <br/>
+
+            The vertex B_a does the following calculation for the clinet:
+            <ol>
+                <li>Maitains Merkle root of its execution state ( see blow)</li>
+                <li>Performs Financial transactions</li>
+            </ol>
+
+            <h3>Execution state</h3>
+            Apart from vertex nodes, there are Execution nodes in this system, see below.
+        </div>
+
+
+        </div>
+        <div>
+            <h2>Subvertex</h2>
+            Subvertex of a vertex reports 
+        </div>
+        <div>
+            <h2>Execution and Storage nodes</h2>
+            One of the goals of this project is to maintain parallelized execution of heavy asynchronous computations on large data structures. This computations will be performed by nodes distinct from the nodes that maintain the state and financial transactions.  There are two types of these nodes:
+            <ol>
+                <li>Code and metadata storage nodes</li>
+                <li>Compute nodes</li>
+            </ol>
+            The metadata storage nodes store plain code ( perhaps encrypted). The compute nodes (a-nodes in the following) can contain large data structures on which massively parallel jobs may be executed in a prolonged period of time. 
+
+            <h3>Execution contracts</h3>
+            These contracts are specified with the b-nodes and must include 
+            <ol>
+                <li>Code call data : address of the plain text code and compiler version</li>
+                <li>Pricing model.</li>
+                <li>Timing information</li>
+                <li>Variable locking and data update model. Specification of concurrency and variable update rule.</li>
+                <li>Parallelization degree: the number of a-nodes that must argee on transaction outcome before state change is commited</li>
+                <li>Merkle root update rule for the client state</li>
+                <li>Randomness source: in the case the computaion involves some randomness, its source must be specified  </li>
+                <li>Payment schedule: in the case the computation is very large, the a-nodes may need continuous payment, even before reaching consensus on the result of the computation </li>
+                <li>Consensus model</li>
+            </ol>
+            <h4>Consensus model for state update</h4>
+            It may be required by the client that the result of the comutation must be checked by b-nodes. This is part of the consensus model for state update. Light version of it is just checking Merlke root of the state. Then the b-nodes cross-check the Merkle roots of the state change of the client. More detailed check may be rquired by the client. 
+            
+            <h4>Data Availability</h4>
+            As part of the code that the client submits for execution, it must specify serialization rule to convert its state into a byte array. This is the rule that the a-nodes will be using to store the state. Then b-node may be required by the client to perform periodic random checks of data. This may take the form of the following contact that a-nodes must sign for:<br/>
+            <code>
+                SubmitDataCheckChallenge(client_id,[i:j]) // callable by b-nodes <br/>
+                SubmitResponce(challenge_id) // callable by a-nodes
+
+            </code>
+            <br/>
+            A-nodes must respond with byte array [i:j] that corresponds to the serialized state, otherwise they will be penalized for failing Data Availability challeneg.
+
+        </div>  
+        <div>
+            <h2>Transaction model</h2>
+            Each client has a corresponding code base that it submitted to the execution nodes ( and the merkle root of which is stored on the vertex). By default, all these functions are public: anybody can call them. It is the responsibility of the programmer to restrict the ids of other entities that can call these functions. Each transaction has the structure <br/>
+            <code>
+                TX=[Code_id,sig,Execution contract, [affected entities]]
+            </code>
+            <br/>
+            where [affected entities]=[c1,...cn] is the list of entities whose functions may be called by Code_id. In the Code_id, there may be function calls to libraries or other eentities that are already deployed on the system. The transaction must specify the complete list of these entities. A-node must reach consensus with all the a-nodes that serve tbe entities [c1,...,cn]. If [A_i,1,...,A_i,k] is the list of a-nodes that registered with the vertex to serve the entity E_i, then if [E_1,...,E_s] is the complete list of the affected entities in the transaction , then the whole pool [A_i,k], i=1...s of a-nodes must reach the consensus on state change , before the transaction can be accepted by the vertex nodes. Note that this structure is potentially recursive: i.e.,  Code_id calls function form Code_id1,  Code_id1 calls function from Code_id2 etc. If the transaction grows very large, the pool of nodes that must confirm the result can also grow very large. To discourage writing such transactions, vertices may implement pricing model in which the price depends exponentially on the number of involved entities.
+        </div>
+
+
+
+        <div>
+            <h1>Search Engine implementation</h1>
+            In this section, detail how a serach engine can be implemented in the DEE described above.
+
+            <div>
+            </div>
+                <h3>Namespace</h3>
+                We split the URI namespace into  segments S_a. Each segment is split split into buckets B_a_i.  The size of the segment is chosen such that R-nodes can serve one segment. Size of bucket is chosen such that a bucket fits C-nodes. For example, the total data of a bucket must not exceed ~10GB. Buckets and segments are "Entities" of DEE.
+            <div>
+                <h2>Entity structure</h2>
+                We focus here only on particular implementation geared for fog computing. In this model , there a-nodes of 2 types: C-nodes and R-nodes. C-nodes are ephemeral user machines, like laptops, with little computational power. They can go offline at any time. These nodes do the following tasks:
+                <ol>
+                    <li>Crawl pages </li>
+                    <li>Create local index</li>
+                    <li>Compute rank</li>
+                </ol>
+                The schedule of the crawl will be orchestrated by the R-nodes. R-nodes will also be responsible for transferring data necessary for rank computation. 
+
+                <br/>
+                R-nodes maintain the following data structures 
+                <code>
+                    <ol>
+                        <li>URI list in a bucket, for each C-node that crawls the  bucket</li>
+                        <li>List of URIs that were confirmed by "enough" C-nodes</li>
+                        <li>Merkle roots of ranks of pages in each bucket, for each Rank_id and each C-node</li>
+                    </ol>
+                </code>
+                R-nodes perform the following operatins
+                <ol>
+                    <li>allow C-nodes to register with them for crawl tasks</li>
+                    <li>the network of R-nodes decides in assignment of buckets which C-nodes will be responsible for. This is the place where coverage algorithm is implemented: the R-nodes maintain lists of C-nodes that cover particular bcket, and when new C-npde joins, it is assigned to a bucket which has the lowest number of healthy C-nodes that cover it.</li>
+                    <li> Maintains the blockchain of search transactions issued to C-nodes that are registered with it</li>
+                </ol>
+
+                <h3>Return Tree</h3>
+                Return tree is a network of R-nodes that are charged with the task of merging the sorted arrays of URIs that are returned in responce to a serch transaction. Each of the R-nodes in the specified Return Tree can be its root. This root serves as an entry point to the search engine. This is where the users can submit query.
+
+                <br/>
+                <h3>Cluster</h3>
+                Cluster is a basic revenue generating entity of the Distributed search engine. It consists of a set of R-nodes R_s_i, each serving segment S_s. There are multiple R-nodes that serve the same segment. When C-node returns crawl resuslts for bucket [B_a \in S_s], it returns it to the subnetwork [R_s_i]. The R-nodes can be malicious, and a consensus must be reached among them. It is the responsibility of the C-node to make sure its results are propagated among the subnetwork [R_s_i].
+
+                <div>
+
+                </div>
+
+                <h3>Buckets</h3>
+                Buckets are entities that  maitain the following info:
+                <ol>
+                    <li>URI list</li>
+                    <li>Ranks for each Rank_id</li>
+                    
+                </ol>
+                Buckets serve api calls 
+                <ol>
+                    <li>generate random array of URIs for crawl</li>
+                    <li>submit ordered list of URIs</li>
+                </ol>
+
+
+                <h2>Crawl operations</h2>
+                    Crawl operation is orchestrated by the network of R-nodes. For each bucket they store the list of URIs that were reported to be in this bucket by C-nodes. Then , on request from C-node, they provide lists of URIs to be crawled by the C-node, and record these lists into a Crawl History Ledger for each c-node. The rule by which lists from different c-nodes are merged may vary and is under experimental study at the moment.  The crwal is considered complete when %p of c-nodes agree to precision \epsioln on the content of the bucket. ( Details here on the metric on the space of the texts within the bucket).
+
+                    <h3>News crawl</h3>
+                    R-nodes must provide update rule for page recrawl and for maintaining fresh page information. 
+
+                <h2>Search Transaction</h2>
+                This transacton can be initiated by a user on each of the R-ndoes participating in an Return Tree.
+
+                This transaction has the following struncture 
+                <ol>
+                    <li>User initiates TX: [Query,R-node_id,Rank_id,sig]</li>
+                    <li>For each vertex in the Index Tree [Query_id,list of R-nodes and their index segments I_a] where the query was submitted</li>
+                    <li>C-nodes submit Merkle root of the sorted list ot URIs that it submits in responce [Query_id,Merkle(ranked URIs)]</li>
+                    <li>for each vertex in the RTree, by each R-node that serves this vertex, the following data is submitted to the storage nodes [Query_id,Merkle( C-node or R-node merged sorted list of URIs)]</li>
+                    <li>user finalization. If user is identified, she may choose to consume the advertisement that comes with the transaction, and , if the transaction is valid ( as determined by the network), then she and the participating nodes may become eleigible to receive the advertising reward.</li>
+                </ol>
+
+                The validation of the transaction is performed by the b-nodes that serve R-nodes. This verification involves :
+                <ol>
+                    <li>Check Merkle tree of the merging of the sorted lists in the RTree. The R-nodes are required to store the merge trees for some period of time ( days, after which the data can be retired), so that the data is available for b-nodes for check at random positions.</li>
+                    <li>The verification of the receipt from the user on the receipt of the final merged sort list.</li>
+                    <li>Optionally, verification of advertisemtn consumption, if this is the adverticement transaction</li>
+                    <li>The b-nodes involved in the verification must document their consensus: the list of y/n votes with signatures. </li>
+                </ol>
+
+            </div>
+        </div>
+
+
+       </div>
+
+
+</body>
+</html>
+
+
