@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+
+</head>
+<body>
+
+
+
+    
+        <div>
+        <h1>Spec of node joining protocols</h1>
+        There are at lest 3 layers in the B-tree of b-nodes that can serve the state maintenance of the search engine. 
+
+
+        <h2>Search Engine Contract</h2>
+        This is simply a load balancer that orchestrates the process of joining r-nodes and c-nodes. It looks at loads of clusters and directs the incoming node to the cluster that is in need of compute. 
+
+        <br/>
+        It also maintains a network of gateways that direct incoming search transactions to clusters.
+
+        <h2>Cluster</h2>
+        This is simply a load balancer that orchestrates the process of joining r-nodes and c-nodes. It contains data fields:
+        <ol>
+            <li>load of segment_a: [total data in bytes; number of search transactions; ]</li>
+            <li>nodes in this segment [number of r-nodes; number of c-nodes]</li>
+            <li>reandomness source</li>
+            <li>node assignment data</li>
+        </ol>
+
+        When a r-node or c-node joins a network, it must contact SE-contract. SE-contract looks at the segment data and determines the segment which is most in need of compute power. Then it uses randomness to select a segment with high demand of compute power and assigns this node to the segment.
+
+        <h2>Segment</h2>
+        Segment S_s is a basic unit of the Fog Architecture. It contains a set of r-nodes [R_s_a] that are paralelizing the transactions that pertain to this sector.
+        <ol>
+            <li>Search transactions: these transctions include merkle roots of arrays returned by each of the c-nodes within the S_s</li>
+            <li>Crawl transactions: these transactions document performance of c-nodes on buckets in the S_s</li>
+            <li>Rank transactions: rank_id, schedule of computation, merkle root of the rank data structure for each of the nodes </li>
+        </ol>
+
+        <h2>R-node</h2>
+        Each segment is served by a network of R-nodes. 
+        
+        <ol>
+            <li>R-nodes propagate the results of search TXs submitted to them by c-nodes. </li>
+            <li>R-nodes submit the merged lists of URIs to the root R-node that was selected by the user to issue th esearch TX</li>
+        </ol>
+
+        <h2>C-node</h2>
+        <ol>
+            <li>Request crawl batch </li>
+            <li>Submit sorted URI list</li>
+        </ol>
+
+
+        </div>
+</body>
+</html>
+
+
